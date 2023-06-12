@@ -153,13 +153,14 @@ namespace cbdc::transaction {
         }
         ret.m_prevout_data = tx.m_outputs[i];
         // The range proof is not required for the inputs & explicitly removed:
-        ret.m_prevout_data.m_range.reset();
-        if(tx.m_out_spend_data.has_value() && tx.m_out_spend_data.value().size() > i) {
-            ret.m_spend_data = tx.m_out_spend_data.value()[i];
-        }
+        //ret.m_prevout_data.m_range.reset();
 
         ret.m_prevout.m_index = i;
         ret.m_prevout.m_tx_id = txid;
+
+        if(tx.m_out_spend_data.has_value() && tx.m_out_spend_data.value().size() > i) {
+            ret.m_spend_data = tx.m_out_spend_data.value()[i];
+        }
 
         return ret;
     }

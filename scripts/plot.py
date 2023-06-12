@@ -88,7 +88,7 @@ if __name__ == '__main__':
     # Get path to test data
     if (len(sys.argv) > 1):
         path = str(sys.argv[1])
-    f_list = glob.glob(path + '/tx_samples_*.txt')
+    f_list = glob.glob(path + '/*tx_samples_*.txt')
     global_fig, global_axs = plt.subplots(1, 2, figsize=(12, 5))
     for fin in f_list:
         plot_latency(fin)

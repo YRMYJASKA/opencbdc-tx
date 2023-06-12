@@ -146,13 +146,21 @@ launch() {
             raft=$(getcount "$1$id")
             if test "$raft" -gt 0; then
                 for node in $(seq 0 $(( "$raft" - 1 )) ); do
-                    ${DBG} "$(getpath "$1")" "$CFG" "$id" "$node" &> "$1_${id}_$node.log" &
+                    if test "$1" = ''; then
+                        rr record -- "$(getpath "$1")" "$CFG" "$id" "$node" &> "$1_${id}_$node.log" &
+                    else
+                        ${DBG} "$(getpath "$1")" "$CFG" "$id" "$node" &> "$1_${id}_$node.log" &
+                    fi
                     PID="$!"
                     printf 'Launched logical %s %d, replica %d [PID: %d]\n' "$1" "$id" "$node" "$PID"
                     PIDS="$PIDS $(getpgid $PID)"
                 done
             else
-                ${DBG} "$(getpath "$1")" "$CFG" "$id" &> "$1_$id.log" &
+                if test "$1" = ''; then
+                    rr record -- "$(getpath "$1")" "$CFG" "$id" &> "$1_$id.log" &
+                else 
+                    ${DBG} "$(getpath "$1")" "$CFG" "$id" &> "$1_$id.log" &
+                fi
                 PID="$!"
                 printf 'Launched %s %d [PID: %d]\n' "$1" "$id" "$PID"
                 PIDS="$PIDS $(getpgid $PID)"
