@@ -13,6 +13,8 @@
 #include "util/serialization/util.hpp"
 
 #include <cstdint>
+#include <utility>
+#include <type_traits>
 #include <optional>
 
 namespace cbdc::transaction {
@@ -114,15 +116,24 @@ namespace cbdc::transaction {
     /// update the UHS with the changes from a \ref full_tx.
     ///
     /// \see \ref cbdc::operator<<(serializer&, const transaction::compact_tx&)
+    template <
+        typename Fund_key = hash_t,
+        typename Fund_value = std::nullptr_t,
+        typename Output_type = std::conditional_t<
+            std::is_null_pointer_v<Fund_value>,
+            Fund_key,
+            std::pair<Fund_key, Fund_value>
+        >
+    >
     struct compact_tx {
         /// The hash of the full transaction returned by \ref tx_id
         hash_t m_id{};
 
         /// The set of hashes of the transaction's inputs
-        std::vector<hash_t> m_inputs;
+        std::vector<Fund_key> m_inputs;
 
         /// The set of hashes of the new outputs created in the transaction
-        std::vector<hash_t> m_uhs_outputs;
+        std::vector<Output_type> m_uhs_outputs;
 
         /// Signatures from sentinels attesting the compact TX is valid.
         std::unordered_map<pubkey_t, signature_t, hashing::null>
@@ -130,7 +141,7 @@ namespace cbdc::transaction {
 
         /// Equality of two compact transactions. Only compares the transaction
         /// IDs.
-        auto operator==(const compact_tx& tx) const noexcept -> bool;
+        auto operator==(const compact_tx<>& tx) const noexcept -> bool;
 
         compact_tx() = default;
 
@@ -164,7 +175,7 @@ namespace cbdc::transaction {
     };
 
     struct compact_tx_hasher {
-        auto operator()(compact_tx const& tx) const noexcept -> size_t;
+        auto operator()(compact_tx<> const& tx) const noexcept -> size_t;
     };
 
     /// \brief Calculates the unique hash of a full transaction

@@ -156,7 +156,7 @@ namespace cbdc::shard {
     void controller::request_consumer() {
         auto pkt = network::message_t();
         while(m_request_queue.pop(pkt)) {
-            auto maybe_tx = from_buffer<transaction::compact_tx>(*pkt.m_pkt);
+            auto maybe_tx = from_buffer<transaction::compact_tx<>>(*pkt.m_pkt);
             if(!maybe_tx.has_value()) {
                 m_logger->error("Invalid transaction packet");
                 continue;

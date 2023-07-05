@@ -44,7 +44,7 @@ namespace cbdc::coordinator {
         /// Should not be used after calling execute().
         /// \param tx compact transaction to add
         /// \return the index of the transaction withing the dtx batch
-        auto add_tx(const transaction::compact_tx& tx) -> size_t;
+        auto add_tx(const transaction::compact_tx<>& tx) -> size_t;
 
         /// Returns the dtx ID associated with this coordinator instance
         /// \return dtx ID for this coordinator
@@ -58,7 +58,7 @@ namespace cbdc::coordinator {
                                  const std::vector<std::vector<uint64_t>>&)>;
         using prepare_cb_t
             = std::function<bool(const hash_t&,
-                                 const std::vector<transaction::compact_tx>&)>;
+                                 const std::vector<transaction::compact_tx<>>&)>;
 
         /// Registers a callback to be called before starting the prepare phase
         /// of the dtx
@@ -98,7 +98,7 @@ namespace cbdc::coordinator {
         /// Sets the state of the dtx to prepare and re-adds all the txs
         /// included in the batch
         /// \param txs list of txs included in the dtx batch
-        void recover_prepare(const std::vector<transaction::compact_tx>& txs);
+        void recover_prepare(const std::vector<transaction::compact_tx<>>& txs);
 
         /// Sets the state of the dtx to commit and sets the state from the end
         /// of the prepare phase so that execute() will continue the commit
@@ -155,7 +155,7 @@ namespace cbdc::coordinator {
         hash_t m_dtx_id;
         std::vector<std::shared_ptr<locking_shard::interface>> m_shards;
         std::vector<std::vector<locking_shard::tx>> m_txs;
-        std::vector<transaction::compact_tx> m_full_txs;
+        std::vector<transaction::compact_tx<>> m_full_txs;
         std::vector<std::vector<uint64_t>> m_tx_idxs;
         prepare_cb_t m_prepare_cb;
         commit_cb_t m_commit_cb;

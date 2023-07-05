@@ -405,7 +405,7 @@ namespace cbdc::transaction::validation {
     }
 
     auto check_attestations(
-        const transaction::compact_tx& tx,
+        const transaction::compact_tx<>& tx,
         const std::unordered_set<pubkey_t, hashing::null>& pubkeys,
         size_t threshold) -> bool {
         if(tx.m_attestations.size() < threshold) {

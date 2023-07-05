@@ -66,9 +66,9 @@ TEST_F(TwoPhaseTest, test_two_shards) {
     auto shards = std::vector<std::shared_ptr<cbdc::locking_shard::interface>>(
         {shard0, shard1});
 
-    auto txs = std::vector<cbdc::transaction::compact_tx>();
+    auto txs = std::vector<cbdc::transaction::compact_tx<>>();
     for(size_t i{0}; i < 1000; i++) {
-        auto tx = cbdc::transaction::compact_tx();
+        auto tx = cbdc::transaction::compact_tx<>();
         std::memcpy(tx.m_id.data(), &i, sizeof(i));
         auto uhs_id = cbdc::hash_t();
         std::memcpy(uhs_id.data(), &i, sizeof(i));
@@ -186,9 +186,9 @@ TEST_F(TwoPhaseTest, test_two_shards_random) {
 
     auto outputs = std::queue<cbdc::hash_t>();
 
-    auto txs = std::vector<cbdc::transaction::compact_tx>();
+    auto txs = std::vector<cbdc::transaction::compact_tx<>>();
     for(size_t i{0}; i < 1000; i++) {
-        auto tx = cbdc::transaction::compact_tx();
+        auto tx = cbdc::transaction::compact_tx<>();
         for(size_t j{0}; j < 4; j++) {
             const auto val = rnd(e);
             std::memcpy(&tx.m_id[j * 8], &val, sizeof(val));
@@ -221,9 +221,9 @@ TEST_F(TwoPhaseTest, test_two_shards_random) {
         ASSERT_TRUE(r);
     }
 
-    txs = std::vector<cbdc::transaction::compact_tx>();
+    txs = std::vector<cbdc::transaction::compact_tx<>>();
     for(size_t i{0}; i < 1000; i++) {
-        auto tx = cbdc::transaction::compact_tx();
+        auto tx = cbdc::transaction::compact_tx<>();
         for(size_t j{0}; j < 4; j++) {
             const auto val = rnd(e);
             std::memcpy(&tx.m_id[j * 8], &val, sizeof(val));
@@ -282,9 +282,9 @@ TEST_F(TwoPhaseTest, test_two_shards_conflicting) {
 
     auto outputs = std::queue<cbdc::hash_t>();
 
-    auto txs = std::vector<cbdc::transaction::compact_tx>();
+    auto txs = std::vector<cbdc::transaction::compact_tx<>>();
     for(size_t i{0}; i < 1000; i++) {
-        auto tx = cbdc::transaction::compact_tx();
+        auto tx = cbdc::transaction::compact_tx<>();
         for(size_t j{0}; j < 4; j++) {
             const auto val = rnd(e);
             std::memcpy(&tx.m_id[j * 8], &val, sizeof(val));
@@ -322,9 +322,9 @@ TEST_F(TwoPhaseTest, test_two_shards_conflicting) {
         ASSERT_TRUE((res0 || res1) && (res0 ^ res1));
     }
 
-    txs = std::vector<cbdc::transaction::compact_tx>();
+    txs = std::vector<cbdc::transaction::compact_tx<>>();
     for(size_t i{0}; i < 1000; i++) {
-        auto tx = cbdc::transaction::compact_tx();
+        auto tx = cbdc::transaction::compact_tx<>();
         for(size_t j{0}; j < 4; j++) {
             const auto val = rnd(e);
             std::memcpy(&tx.m_id[j * 8], &val, sizeof(val));

@@ -72,12 +72,12 @@ namespace cbdc {
     /// and then the output hashes.
     /// \see \ref cbdc::operator<<(serializer&, const std::array<T, len>&)
     /// \see \ref cbdc::operator<<(serializer&, const std::vector<T>&)
-    auto operator<<(serializer& packet, const transaction::compact_tx& tx)
+    auto operator<<(serializer& packet, const transaction::compact_tx<>& tx)
         -> serializer&;
 
     /// Deserializes a compact transaction.
     /// \see \ref cbdc::operator<<(serializer&, const transaction::compact_tx&)
-    auto operator>>(serializer& packet, transaction::compact_tx& tx)
+    auto operator>>(serializer& packet, transaction::compact_tx<>& tx)
         -> serializer&;
 
     /// Deserializes an input error.

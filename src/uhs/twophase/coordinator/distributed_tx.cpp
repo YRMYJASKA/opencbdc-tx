@@ -144,7 +144,7 @@ namespace cbdc::coordinator {
         return m_complete_txs;
     }
 
-    auto distributed_tx::add_tx(const transaction::compact_tx& tx) -> size_t {
+    auto distributed_tx::add_tx(const transaction::compact_tx<>& tx) -> size_t {
         for(size_t i{0}; i < m_shards.size(); i++) {
             const auto& shard = m_shards[i];
             auto stx = locking_shard::tx();
@@ -236,7 +236,7 @@ namespace cbdc::coordinator {
     }
 
     void distributed_tx::recover_prepare(
-        const std::vector<transaction::compact_tx>& txs) {
+        const std::vector<transaction::compact_tx<>>& txs) {
         m_state = dtx_state::prepare;
         for(const auto& tx : txs) {
             add_tx(tx);

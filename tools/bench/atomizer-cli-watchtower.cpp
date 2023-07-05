@@ -22,7 +22,7 @@
 #include <memory>
 #include <thread>
 
-auto send_tx_to_atomizer(const cbdc::transaction::compact_tx& tx,
+auto send_tx_to_atomizer(const cbdc::transaction::compact_tx<>& tx,
                          const uint32_t height)
     -> cbdc::atomizer::tx_notify_request {
     cbdc::atomizer::tx_notify_request msg;
@@ -231,7 +231,7 @@ auto main(int argc, char** argv) -> int {
             size_t rebroadcast = 0;
             size_t in_flight{};
             {
-                std::vector<cbdc::transaction::compact_tx> retry_txs;
+                std::vector<cbdc::transaction::compact_tx<>> retry_txs;
                 std::vector<cbdc::transaction::full_tx> retry_txs_full;
                 {
                     std::lock_guard<std::mutex> lg(txs_mut);
@@ -306,7 +306,7 @@ auto main(int argc, char** argv) -> int {
 
         cbdc::atomizer::tx_notify_request msg;
 
-        msg.m_tx = cbdc::transaction::compact_tx(mint_tx);
+        msg.m_tx = cbdc::transaction::compact_tx<>(mint_tx);
         msg.m_block_height
             = blocking_watchtower_client->request_best_block_height()
                   ->height();
@@ -341,7 +341,7 @@ auto main(int argc, char** argv) -> int {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(cfg.m_target_block_interval)
                 * cfg.m_stxo_cache_depth);
-            cbdc::transaction::compact_tx ctx{mint_tx};
+            cbdc::transaction::compact_tx<> ctx{mint_tx};
             watchtower_client->request_status_update(
                 cbdc::watchtower::status_update_request{
                     {{ctx.m_id, {ctx.m_uhs_outputs[0]}}}});
@@ -398,7 +398,7 @@ auto main(int argc, char** argv) -> int {
                 std::lock_guard<std::mutex> lck(txs_mut);
                 key_uhs_ids.reserve(pending_txs.size());
                 for(const auto& it : pending_txs) {
-                    cbdc::transaction::compact_tx ctx{it.second};
+                    cbdc::transaction::compact_tx<> ctx{it.second};
                     key_uhs_ids.emplace(
                         std::make_pair(ctx.m_id, ctx.m_uhs_outputs));
                 }
@@ -503,7 +503,7 @@ auto main(int argc, char** argv) -> int {
                                                  [](auto /* resp */) {});
         } else {
             auto send_pkt
-                = send_tx_to_atomizer(cbdc::transaction::compact_tx(pay_tx),
+                = send_tx_to_atomizer(cbdc::transaction::compact_tx<>(pay_tx),
                                       best_height);
             if(!atomizer_network.send_to_one(
                    cbdc::atomizer::request{send_pkt})) {
@@ -531,7 +531,7 @@ auto main(int argc, char** argv) -> int {
                 std::lock_guard<std::mutex> lck(txs_mut);
                 key_uhs_ids.reserve(pending_txs.size());
                 for(const auto& it : pending_txs) {
-                    cbdc::transaction::compact_tx ctx{it.second};
+                    cbdc::transaction::compact_tx<> ctx{it.second};
                     key_uhs_ids.emplace(
                         std::make_pair(ctx.m_id, ctx.m_uhs_outputs));
                 }

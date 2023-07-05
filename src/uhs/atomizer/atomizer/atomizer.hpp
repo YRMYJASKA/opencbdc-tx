@@ -60,7 +60,7 @@ namespace cbdc::atomizer {
         ///                     attested the validity.
         /// \return an error to forward to the watchtower, if necessary.
         [[nodiscard]] auto insert(uint64_t block_height,
-                                  transaction::compact_tx tx,
+                                  transaction::compact_tx<> tx,
                                   std::unordered_set<uint32_t> attestations)
             -> std::optional<watchtower::tx_error>;
 
@@ -80,7 +80,7 @@ namespace cbdc::atomizer {
         ///         transaction into the next block, or the relevant watchtower
         ///         error on failure.
         [[nodiscard]] auto insert_complete(uint64_t oldest_attestation,
-                                           transaction::compact_tx&& tx)
+                                           transaction::compact_tx<>&& tx)
             -> std::optional<watchtower::tx_error>;
 
         /// Adds the current set of complete transactions to a new block and
@@ -116,14 +116,14 @@ namespace cbdc::atomizer {
         auto operator==(const atomizer& other) const -> bool;
 
       private:
-        std::vector<std::unordered_map<transaction::compact_tx,
+        std::vector<std::unordered_map<transaction::compact_tx<>,
                                        std::unordered_set<uint32_t>,
                                        transaction::compact_tx_hasher>>
             m_txs;
 
         // These maps should be keyed/salted for safety. For now they
         // use input values directly as an optimization.
-        std::vector<transaction::compact_tx> m_complete_txs;
+        std::vector<transaction::compact_tx<>> m_complete_txs;
 
         std::vector<std::unordered_set<hash_t, hashing::null>> m_spent;
 
@@ -135,14 +135,14 @@ namespace cbdc::atomizer {
 
         [[nodiscard]] auto
         check_notification_offset(uint64_t height_offset,
-                                  const transaction::compact_tx& tx) const
+                                  const transaction::compact_tx<>& tx) const
             -> std::optional<watchtower::tx_error>;
 
-        [[nodiscard]] auto check_stxo_cache(const transaction::compact_tx& tx,
+        [[nodiscard]] auto check_stxo_cache(const transaction::compact_tx<>& tx,
                                             uint64_t cache_check_range) const
             -> std::optional<watchtower::tx_error>;
 
-        void add_tx_to_stxo_cache(const transaction::compact_tx& tx);
+        void add_tx_to_stxo_cache(const transaction::compact_tx<>& tx);
     };
 }
 

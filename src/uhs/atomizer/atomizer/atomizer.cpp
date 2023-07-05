@@ -42,7 +42,7 @@ namespace cbdc::atomizer {
     }
 
     auto atomizer::insert(const uint64_t block_height,
-                          transaction::compact_tx tx,
+                          transaction::compact_tx<> tx,
                           std::unordered_set<uint32_t> attestations)
         -> std::optional<cbdc::watchtower::tx_error> {
         const auto height_offset = get_notification_offset(block_height);
@@ -132,7 +132,7 @@ namespace cbdc::atomizer {
     }
 
     auto atomizer::insert_complete(uint64_t oldest_attestation,
-                                   transaction::compact_tx&& tx)
+                                   transaction::compact_tx<>&& tx)
         -> std::optional<cbdc::watchtower::tx_error> {
         const auto height_offset = get_notification_offset(oldest_attestation);
 
@@ -206,7 +206,7 @@ namespace cbdc::atomizer {
     }
 
     auto atomizer::check_notification_offset(uint64_t height_offset,
-                                             const transaction::compact_tx& tx)
+                                             const transaction::compact_tx<>& tx)
         const -> std::optional<cbdc::watchtower::tx_error> {
         // Check whether this TX notification is recent enough that we can
         // safely process it by checking our spent UTXO caches.
@@ -218,7 +218,7 @@ namespace cbdc::atomizer {
         return std::nullopt;
     }
 
-    auto atomizer::check_stxo_cache(const transaction::compact_tx& tx,
+    auto atomizer::check_stxo_cache(const transaction::compact_tx<>& tx,
                                     uint64_t cache_check_range) const
         -> std::optional<cbdc::watchtower::tx_error> {
         // For each height offset in our STXO cache up to the offset of the
@@ -242,7 +242,7 @@ namespace cbdc::atomizer {
         return std::nullopt;
     }
 
-    void atomizer::add_tx_to_stxo_cache(const transaction::compact_tx& tx) {
+    void atomizer::add_tx_to_stxo_cache(const transaction::compact_tx<>& tx) {
         // None of the inputs have previously been spent during block heights
         // we used attestations from, so spend all the TX inputs in the current
         // block height (offset 0).

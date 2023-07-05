@@ -21,14 +21,14 @@ class uhs_set : public ::benchmark::Fixture {
         wallet1.confirm_transaction(mint_tx1);
         auto mint_tx2 = wallet2.mint_new_coins(1, 100);
         wallet2.confirm_transaction(mint_tx2);
-        m_cp_tx = cbdc::transaction::compact_tx(m_valid_tx);
+        m_cp_tx = cbdc::transaction::compact_tx<>(m_valid_tx);
     }
 
     cbdc::transaction::wallet wallet1;
     cbdc::transaction::wallet wallet2;
 
     cbdc::transaction::full_tx m_valid_tx{};
-    cbdc::transaction::compact_tx m_cp_tx;
+    cbdc::transaction::compact_tx<> m_cp_tx;
 
     std::unordered_set<cbdc::hash_t, cbdc::hashing::null> set;
 };
@@ -38,13 +38,13 @@ BENCHMARK_F(uhs_set, emplace_new)(benchmark::State& state) {
     for(auto _ : state) {
         m_valid_tx = wallet1.send_to(2, wallet1.generate_key(), true).value();
         wallet1.confirm_transaction(m_valid_tx);
-        m_cp_tx = cbdc::transaction::compact_tx(m_valid_tx);
+        m_cp_tx = cbdc::transaction::compact_tx<>(m_valid_tx);
 
         state.ResumeTiming();
         set.emplace(m_cp_tx.m_id);
         state.PauseTiming();
 
-        m_cp_tx = cbdc::transaction::compact_tx(m_valid_tx);
+        m_cp_tx = cbdc::transaction::compact_tx<>(m_valid_tx);
     }
 }
 
@@ -53,12 +53,12 @@ BENCHMARK_F(uhs_set, erase_item)(benchmark::State& state) {
     for(auto _ : state) {
         m_valid_tx = wallet1.send_to(2, wallet1.generate_key(), true).value();
         wallet1.confirm_transaction(m_valid_tx);
-        m_cp_tx = cbdc::transaction::compact_tx(m_valid_tx);
+        m_cp_tx = cbdc::transaction::compact_tx<>(m_valid_tx);
         set.emplace(m_cp_tx.m_id);
         state.ResumeTiming();
         set.erase(m_cp_tx.m_id);
         state.PauseTiming();
 
-        m_cp_tx = cbdc::transaction::compact_tx(m_valid_tx);
+        m_cp_tx = cbdc::transaction::compact_tx<>(m_valid_tx);
     }
 }

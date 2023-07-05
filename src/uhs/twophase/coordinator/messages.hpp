@@ -10,7 +10,7 @@
 
 namespace cbdc::coordinator::rpc {
     /// Coordinator RPC request message; a compact transaction.
-    using request = transaction::compact_tx;
+    using request = transaction::compact_tx<>;
     /// Coordinator RPC response message; a boolean, true if the coordinator
     /// completed the transaction, false otherwise.
     using response = bool;

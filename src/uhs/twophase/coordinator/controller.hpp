@@ -57,7 +57,7 @@ namespace cbdc::coordinator {
 
         /// List of compact transactions associated with a distributed
         /// transaction in the prepare phase.
-        using prepare_tx = std::vector<transaction::compact_tx>;
+        using prepare_tx = std::vector<transaction::compact_tx<>>;
 
         /// Map from distributed transaction IDs in the prepare phase to the
         /// associated compact transactions.
@@ -131,7 +131,7 @@ namespace cbdc::coordinator {
         ///         false if the current batch already contained the
         ///         transaction or if the controller shut down before the
         ///         operation could finish.
-        auto execute_transaction(transaction::compact_tx tx,
+        auto execute_transaction(transaction::compact_tx<> tx,
                                  callback_type result_callback)
             -> bool override;
 
@@ -187,7 +187,7 @@ namespace cbdc::coordinator {
             -> nuraft::cb_func::ReturnCode;
 
         auto prepare_cb(const hash_t& dtx_id,
-                        const std::vector<transaction::compact_tx>& txs)
+                        const std::vector<transaction::compact_tx<>>& txs)
             -> bool;
         auto commit_cb(const hash_t& dtx_id,
                        const std::vector<bool>& complete_txs,

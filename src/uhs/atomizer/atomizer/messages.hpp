@@ -22,7 +22,7 @@ namespace cbdc::atomizer {
         auto operator==(const tx_notify_request& rhs) const -> bool;
 
         /// Compact transaction associated with the notification.
-        transaction::compact_tx m_tx;
+        transaction::compact_tx<> m_tx;
         /// Set of input indexes the shard is attesting are unspent at the
         /// given block height.
         std::unordered_set<uint64_t> m_attestations;
@@ -44,7 +44,7 @@ namespace cbdc::atomizer {
         auto operator==(const aggregate_tx_notification& rhs) const -> bool;
 
         /// Compact transaction associated with the notification.
-        transaction::compact_tx m_tx;
+        transaction::compact_tx<> m_tx;
         /// Block height of the oldest input attestation used to build this
         /// aggregate notification.
         uint64_t m_oldest_attestation{};

@@ -38,7 +38,7 @@ namespace cbdc::coordinator {
         ///                        executed to completion or failed.
         /// \return true if the implementation started executing the
         ///         transaction.
-        virtual auto execute_transaction(transaction::compact_tx tx,
+        virtual auto execute_transaction(transaction::compact_tx<> tx,
                                          callback_type result_callback) -> bool
             = 0;
     };

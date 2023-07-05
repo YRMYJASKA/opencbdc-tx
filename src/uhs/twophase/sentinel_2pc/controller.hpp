@@ -74,15 +74,15 @@ namespace cbdc::sentinel_2pc {
         validate_result_handler(validate_result v_res,
                                 const transaction::full_tx& tx,
                                 execute_result_callback_type result_callback,
-                                transaction::compact_tx ctx,
+                                transaction::compact_tx<> ctx,
                                 std::unordered_set<size_t> requested);
 
         void gather_attestations(const transaction::full_tx& tx,
                                  execute_result_callback_type result_callback,
-                                 const transaction::compact_tx& ctx,
+                                 const transaction::compact_tx<>& ctx,
                                  std::unordered_set<size_t> requested);
 
-        void send_compact_tx(const transaction::compact_tx& ctx,
+        void send_compact_tx(const transaction::compact_tx<>& ctx,
                              execute_result_callback_type result_callback);
 
         uint32_t m_sentinel_id;

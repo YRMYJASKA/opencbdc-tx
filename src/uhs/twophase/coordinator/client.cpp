@@ -16,7 +16,7 @@ namespace cbdc::coordinator::rpc {
         return m_client->init();
     }
 
-    auto client::execute_transaction(transaction::compact_tx tx,
+    auto client::execute_transaction(transaction::compact_tx<> tx,
                                      callback_type result_callback) -> bool {
         return m_client->call(std::move(tx), std::move(result_callback));
     }

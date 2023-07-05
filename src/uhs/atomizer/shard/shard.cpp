@@ -102,7 +102,7 @@ namespace cbdc::shard {
         return true;
     }
 
-    auto shard::digest_transaction(transaction::compact_tx tx)
+    auto shard::digest_transaction(transaction::compact_tx<> tx)
         -> std::variant<atomizer::tx_notify_request,
                         cbdc::watchtower::tx_error> {
         std::shared_ptr<const leveldb::Snapshot> snp{};

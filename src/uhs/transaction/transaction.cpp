@@ -58,7 +58,7 @@ namespace cbdc::transaction {
             && rhs.m_witness == m_witness;
     }
 
-    auto compact_tx_hasher::operator()(const compact_tx& tx) const noexcept
+    auto compact_tx_hasher::operator()(const compact_tx<>& tx) const noexcept
         -> size_t {
         size_t ret{};
         std::memcpy(&ret, tx.m_id.data(), sizeof(ret));
@@ -115,11 +115,13 @@ namespace cbdc::transaction {
         return ret;
     }
 
-    auto compact_tx::operator==(const compact_tx& tx) const noexcept -> bool {
+    template <>
+    auto compact_tx<>::operator==(const compact_tx<>& tx) const noexcept -> bool {
         return m_id == tx.m_id;
     }
 
-    compact_tx::compact_tx(const full_tx& tx) {
+    template <>
+    compact_tx<>::compact_tx(const full_tx& tx) {
         m_id = tx_id(tx);
         for(const auto& inp : tx.m_inputs) {
             m_inputs.push_back(inp.hash());
@@ -130,7 +132,8 @@ namespace cbdc::transaction {
         }
     }
 
-    auto compact_tx::sign(secp256k1_context* ctx, const privkey_t& key) const
+    template <>
+    auto compact_tx<>::sign(secp256k1_context* ctx, const privkey_t& key) const
         -> sentinel_attestation {
         auto payload = hash();
         auto pubkey = pubkey_from_privkey(key, ctx);
@@ -151,7 +154,8 @@ namespace cbdc::transaction {
         return {pubkey, sig};
     }
 
-    auto compact_tx::hash() const -> hash_t {
+    template <typename K, typename V, typename O>
+    auto compact_tx<K, V, O>::hash() const -> hash_t {
         // Don't include the attesations in the hash
         auto ctx = *this;
         ctx.m_attestations.clear();
@@ -163,7 +167,8 @@ namespace cbdc::transaction {
         return ret;
     }
 
-    auto compact_tx::verify(secp256k1_context* ctx,
+    template <>
+    auto compact_tx<>::verify(secp256k1_context* ctx,
                             const sentinel_attestation& att) const -> bool {
         auto payload = hash();
         secp256k1_xonly_pubkey pubkey{};
@@ -181,4 +186,7 @@ namespace cbdc::transaction {
 
         return true;
     }
+
+    template struct compact_tx<hash_t>;
 }
+

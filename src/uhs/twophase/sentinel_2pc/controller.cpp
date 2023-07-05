@@ -112,7 +112,7 @@ namespace cbdc::sentinel_2pc {
             return true;
         }
 
-        auto compact_tx = cbdc::transaction::compact_tx(tx);
+        auto compact_tx = cbdc::transaction::compact_tx<>(tx);
 
         if(m_opts.m_attestation_threshold > 0) {
             auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
@@ -148,7 +148,7 @@ namespace cbdc::sentinel_2pc {
             result_callback(std::nullopt);
             return true;
         }
-        auto compact_tx = cbdc::transaction::compact_tx(tx);
+        auto compact_tx = cbdc::transaction::compact_tx<>(tx);
         auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
         result_callback(std::move(attestation));
         return true;
@@ -158,7 +158,7 @@ namespace cbdc::sentinel_2pc {
         validate_result v_res,
         const transaction::full_tx& tx,
         execute_result_callback_type result_callback,
-        transaction::compact_tx ctx,
+        transaction::compact_tx<> ctx,
         std::unordered_set<size_t> requested) {
         if(!v_res.has_value()) {
             m_logger->error(to_string(ctx.m_id),
@@ -176,7 +176,7 @@ namespace cbdc::sentinel_2pc {
     void controller::gather_attestations(
         const transaction::full_tx& tx,
         execute_result_callback_type result_callback,
-        const transaction::compact_tx& ctx,
+        const transaction::compact_tx<>& ctx,
         std::unordered_set<size_t> requested) {
         if(ctx.m_attestations.size() < m_opts.m_attestation_threshold) {
             auto success = false;
@@ -207,7 +207,7 @@ namespace cbdc::sentinel_2pc {
     }
 
     void
-    controller::send_compact_tx(const transaction::compact_tx& ctx,
+    controller::send_compact_tx(const transaction::compact_tx<>& ctx,
                                 execute_result_callback_type result_callback) {
         auto cb =
             [&, res_cb = std::move(result_callback)](std::optional<bool> res) {

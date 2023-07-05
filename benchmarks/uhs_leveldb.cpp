@@ -30,9 +30,9 @@ struct db_container {
     cbdc::transaction::wallet wallet2;
 
     cbdc::transaction::full_tx m_valid_tx{};
-    cbdc::transaction::compact_tx m_cp_tx;
-    std::vector<cbdc::transaction::compact_tx> block;
-    std::vector<cbdc::transaction::compact_tx> block_abridged;
+    cbdc::transaction::compact_tx<> m_cp_tx;
+    std::vector<cbdc::transaction::compact_tx<>> block;
+    std::vector<cbdc::transaction::compact_tx<>> block_abridged;
 
     leveldb::Status res;
 
@@ -50,32 +50,32 @@ struct db_container {
         res = leveldb::DB::Open(opt, g_shard_test_dir, &db_ptr);
         m_db.reset(db_ptr);
 
-        block.push_back(cbdc::transaction::compact_tx(mint_tx1));
-        block.push_back(cbdc::transaction::compact_tx(mint_tx2));
+        block.push_back(cbdc::transaction::compact_tx<>(mint_tx1));
+        block.push_back(cbdc::transaction::compact_tx<>(mint_tx2));
 
         m_valid_tx
             = wallet1.send_to(100, wallet2.generate_key(), true).value();
-        block.push_back(cbdc::transaction::compact_tx(m_valid_tx));
-        block_abridged.push_back(cbdc::transaction::compact_tx(m_valid_tx));
+        block.push_back(cbdc::transaction::compact_tx<>(m_valid_tx));
+        block_abridged.push_back(cbdc::transaction::compact_tx<>(m_valid_tx));
 
         for(int i = 0; i < 10; i++) {
             m_valid_tx
                 = wallet1.send_to(100, wallet2.generate_key(), true).value();
             wallet1.confirm_transaction(m_valid_tx);
             wallet2.confirm_transaction(m_valid_tx);
-            block.push_back(cbdc::transaction::compact_tx(m_valid_tx));
+            block.push_back(cbdc::transaction::compact_tx<>(m_valid_tx));
 
             m_valid_tx
                 = wallet2.send_to(50, wallet1.generate_key(), true).value();
             wallet1.confirm_transaction(m_valid_tx);
             wallet2.confirm_transaction(m_valid_tx);
-            block.push_back(cbdc::transaction::compact_tx(m_valid_tx));
+            block.push_back(cbdc::transaction::compact_tx<>(m_valid_tx));
 
             m_valid_tx
                 = wallet2.send_to(50, wallet1.generate_key(), true).value();
             wallet1.confirm_transaction(m_valid_tx);
             wallet2.confirm_transaction(m_valid_tx);
-            block.push_back(cbdc::transaction::compact_tx(m_valid_tx));
+            block.push_back(cbdc::transaction::compact_tx<>(m_valid_tx));
         }
     }
 
@@ -99,7 +99,7 @@ static void uhs_leveldb_put_new(benchmark::State& state) {
         db.wallet1.confirm_transaction(db.m_valid_tx);
         db.wallet2.confirm_transaction(db.m_valid_tx);
 
-        db.m_cp_tx = cbdc::transaction::compact_tx(db.m_valid_tx);
+        db.m_cp_tx = cbdc::transaction::compact_tx<>(db.m_valid_tx);
         std::array<char, sizeof(db.m_cp_tx.m_uhs_outputs)> out_arr{};
         std::memcpy(out_arr.data(),
                     db.m_cp_tx.m_uhs_outputs.data(),
@@ -120,7 +120,7 @@ static void uhs_leveldb_put_new(benchmark::State& state) {
 static void uhs_leveldb_item_delete(benchmark::State& state) {
     auto db = db_container();
 
-    db.m_cp_tx = cbdc::transaction::compact_tx(db.m_valid_tx);
+    db.m_cp_tx = cbdc::transaction::compact_tx<>(db.m_valid_tx);
     std::array<char, sizeof(db.m_cp_tx.m_uhs_outputs)> out_arr{};
     std::memcpy(out_arr.data(),
                 db.m_cp_tx.m_uhs_outputs.data(),

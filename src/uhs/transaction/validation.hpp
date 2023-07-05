@@ -161,7 +161,7 @@ namespace cbdc::transaction::validation {
     /// \return true if the required number of unique attestations are attached
     ///         to the compact transaction.
     auto check_attestations(
-        const transaction::compact_tx& tx,
+        const transaction::compact_tx<>& tx,
         const std::unordered_set<pubkey_t, hashing::null>& pubkeys,
         size_t threshold) -> bool;
 }

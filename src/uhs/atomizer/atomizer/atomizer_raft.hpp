@@ -86,7 +86,7 @@ namespace cbdc::atomizer {
         using attestation_set = std::
             unordered_set<attestation, attestation_hash, attestation_cmp>;
 
-        std::unordered_map<transaction::compact_tx,
+        std::unordered_map<transaction::compact_tx<>,
                            attestation_set,
                            transaction::compact_tx_hasher>
             m_txs;

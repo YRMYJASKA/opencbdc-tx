@@ -23,7 +23,7 @@ namespace cbdc::atomizer {
         /// from the first block starting at height zero.
         uint64_t m_height{};
         /// Compact transactions settled by the atomizer in this block.
-        std::vector<transaction::compact_tx> m_transactions;
+        std::vector<transaction::compact_tx<>> m_transactions;
     };
 }
 

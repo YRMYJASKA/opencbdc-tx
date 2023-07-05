@@ -21,7 +21,7 @@ namespace cbdc::test {
     /// Specialization of CCompactTransaction to allow for full struct
     /// comparison, as opposed to the abbreviated comparison done in the
     /// CCompactTransaction.
-    struct compact_transaction : cbdc::transaction::compact_tx {
+    struct compact_transaction : cbdc::transaction::compact_tx<> {
         compact_transaction() = default;
         explicit compact_transaction(const compact_tx& transaction);
         auto operator==(const compact_tx& tx) const noexcept -> bool;

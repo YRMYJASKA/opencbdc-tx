@@ -57,9 +57,9 @@ TEST_F(sentinel_2pc_integration_test, valid_signed_tx) {
     auto tx = wallet.send_to(2, 2, wallet.generate_key(), true);
     ASSERT_TRUE(tx.has_value());
 
-    auto ctx = cbdc::transaction::compact_tx(tx.value());
+    auto ctx = cbdc::transaction::compact_tx<>(tx.value());
 
-    auto err = m_sys->expect<cbdc::transaction::compact_tx>(
+    auto err = m_sys->expect<cbdc::transaction::compact_tx<>>(
         cbdc::test::mock_system_module::coordinator);
 
     cbdc::sentinel::execute_response want{cbdc::sentinel::tx_status::confirmed,

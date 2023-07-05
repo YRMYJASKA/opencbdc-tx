@@ -108,7 +108,7 @@ namespace cbdc::sentinel {
     }
 
     void controller::send_transaction(const transaction::full_tx& tx) {
-        auto compact_tx = cbdc::transaction::compact_tx(tx);
+        auto compact_tx = cbdc::transaction::compact_tx<>(tx);
         auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
         compact_tx.m_attestations.insert(attestation);
 
@@ -121,7 +121,7 @@ namespace cbdc::sentinel {
         if(res.has_value()) {
             return std::nullopt;
         }
-        auto compact_tx = cbdc::transaction::compact_tx(tx);
+        auto compact_tx = cbdc::transaction::compact_tx<>(tx);
         auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
         return attestation;
     }
@@ -129,7 +129,7 @@ namespace cbdc::sentinel {
     void
     controller::validate_result_handler(async_interface::validate_result v_res,
                                         const transaction::full_tx& tx,
-                                        transaction::compact_tx ctx,
+                                        transaction::compact_tx<> ctx,
                                         std::unordered_set<size_t> requested) {
         if(!v_res.has_value()) {
             m_logger->error(cbdc::to_string(ctx.m_id),
@@ -142,7 +142,7 @@ namespace cbdc::sentinel {
 
     void
     controller::gather_attestations(const transaction::full_tx& tx,
-                                    const transaction::compact_tx& ctx,
+                                    const transaction::compact_tx<>& ctx,
                                     std::unordered_set<size_t> requested) {
         if(ctx.m_attestations.size() < m_opts.m_attestation_threshold) {
             auto success = false;
@@ -169,7 +169,7 @@ namespace cbdc::sentinel {
         send_compact_tx(ctx);
     }
 
-    void controller::send_compact_tx(const transaction::compact_tx& ctx) {
+    void controller::send_compact_tx(const transaction::compact_tx<>& ctx) {
         auto ctx_pkt = std::make_shared<cbdc::buffer>(cbdc::make_buffer(ctx));
 
         auto offset = [&]() {

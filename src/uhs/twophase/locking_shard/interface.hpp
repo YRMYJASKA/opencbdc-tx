@@ -17,7 +17,7 @@ namespace cbdc::locking_shard {
     /// Transaction type processed by locking shards.
     struct tx {
         /// Compact TX.
-        transaction::compact_tx m_tx;
+        transaction::compact_tx<> m_tx;
 
         auto operator==(const tx& rhs) const -> bool;
     };

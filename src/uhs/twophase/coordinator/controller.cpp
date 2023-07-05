@@ -145,7 +145,7 @@ namespace cbdc::coordinator {
 
     auto
     controller::prepare_cb(const hash_t& dtx_id,
-                           const std::vector<transaction::compact_tx>& txs)
+                           const std::vector<transaction::compact_tx<>>& txs)
         -> bool {
         // Send the prepare status for this dtx ID and the txs contained within
         // to the coordinator RSM and ensure it replicated (or failed) before
@@ -681,7 +681,7 @@ namespace cbdc::coordinator {
                         rhs.m_discard_txs);
     }
 
-    auto controller::execute_transaction(transaction::compact_tx tx,
+    auto controller::execute_transaction(transaction::compact_tx<> tx,
                                          callback_type result_callback)
         -> bool {
         // If we're not the leader we can't process txs
