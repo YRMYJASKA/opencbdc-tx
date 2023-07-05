@@ -4,7 +4,7 @@ var searchData=
   ['wallet_1',['wallet',['../classcbdc_1_1transaction_1_1wallet.html',1,'cbdc::transaction::wallet'],['../classcbdc_1_1transaction_1_1wallet.html#aeb445b51bc7a03e7d2655dd50e999466',1,'cbdc::transaction::wallet::wallet()']]],
   ['wallet_2ecpp_2',['wallet.cpp',['../wallet_8cpp.html',1,'']]],
   ['wallet_2ehpp_3',['wallet.hpp',['../wallet_8hpp.html',1,'']]],
-  ['warn_4',['warn',['../namespacecbdc_1_1raft.html#a90ce1bef3a0a2ff31a408bd8178818d8a1ea4c3ab05ee0c6d4de30740443769cb',1,'cbdc::raft::warn()'],['../namespacecbdc_1_1logging.html#a71a306e5ac8234a66ce25bb5aed18254a1ea4c3ab05ee0c6d4de30740443769cb',1,'cbdc::logging::warn()'],['../classcbdc_1_1logging_1_1log.html#a6ffe8bc1cee9fd7b475a357ffc8550ee',1,'cbdc::logging::log::warn()']]],
+  ['warn_4',['warn',['../namespacecbdc_1_1raft.html#a90ce1bef3a0a2ff31a408bd8178818d8a1ea4c3ab05ee0c6d4de30740443769cb',1,'cbdc::raft::warn'],['../namespacecbdc_1_1logging.html#a71a306e5ac8234a66ce25bb5aed18254a1ea4c3ab05ee0c6d4de30740443769cb',1,'cbdc::logging::warn'],['../classcbdc_1_1logging_1_1log.html#a6ffe8bc1cee9fd7b475a357ffc8550ee',1,'cbdc::logging::log::warn()']]],
   ['watchtower_5',['watchtower',['../classcbdc_1_1watchtower_1_1watchtower.html',1,'cbdc::watchtower::watchtower'],['../classcbdc_1_1watchtower_1_1watchtower.html#a59024e56d3a701afa3c4cc00812d571f',1,'cbdc::watchtower::watchtower::watchtower(size_t block_cache_size, size_t error_cache_size)'],['../classcbdc_1_1watchtower_1_1watchtower.html#a5f6cd0d8025819a37b9f9d4f8995f343',1,'cbdc::watchtower::watchtower::watchtower()=delete']]],
   ['watchtower_2ecpp_6',['watchtower.cpp',['../watchtower_8cpp.html',1,'']]],
   ['watchtower_2ehpp_7',['watchtower.hpp',['../watchtower_8hpp.html',1,'']]],
