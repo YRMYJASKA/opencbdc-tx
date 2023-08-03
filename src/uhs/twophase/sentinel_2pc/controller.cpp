@@ -9,6 +9,9 @@
 #include "util/rpc/tcp_server.hpp"
 #include "util/serialization/util.hpp"
 
+#include <memory>
+#include <thread>
+#include <mutex>
 #include <utility>
 
 namespace cbdc::sentinel_2pc {
@@ -95,10 +98,13 @@ namespace cbdc::sentinel_2pc {
         return true;
     }
 
+
     auto controller::execute_transaction(
         transaction::full_tx tx,
         execute_result_callback_type result_callback) -> bool {
         const auto validation_err = transaction::validation::check_tx(tx);
+
+        
 
         if(validation_err.has_value()) {
             auto tx_id = transaction::tx_id(tx);
@@ -111,6 +117,22 @@ namespace cbdc::sentinel_2pc {
                 cbdc::sentinel::tx_status::static_invalid,
                 validation_err});
             return true;
+        }
+
+        // Add task for batching
+        auto batch_verification_err = batch_add_verification(tx);
+        if (batch_verification_err.has_value()) {
+          // We got an error for this one
+          auto tx_id = transaction::tx_id(tx);
+          m_logger->debug(
+              "Rejected (",
+              transaction::validation::to_string(validation_err.value()),
+              ")",
+              to_string(tx_id));
+          result_callback(cbdc::sentinel::execute_response{
+              cbdc::sentinel::tx_status::static_invalid,
+              validation_err});
+          return true;
         }
 
         auto compact_tx = cbdc::transaction::compact_tx(tx);
@@ -145,15 +167,75 @@ namespace cbdc::sentinel_2pc {
         transaction::full_tx tx,
         validate_result_callback_type result_callback) -> bool {
         const auto validation_err = transaction::validation::check_tx(tx);
+
         if(validation_err.has_value()) {
             result_callback(std::nullopt);
             return true;
         }
+
+        // Add task for ratching
+        auto batch_verification_err = batch_add_verification(tx);
+        if(batch_verification_err.has_value()) {
+            result_callback(std::nullopt);
+            return true;
+        }
+
         auto compact_tx = cbdc::transaction::compact_tx(tx);
         auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
         result_callback(std::move(attestation));
         return true;
     }
+
+  auto controller::batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error> {
+     // TODO: finish
+
+     // TODO clean template stuff
+     using proof_err_opt = std::optional<cbdc::transaction::validation::proof_error>;
+     using err_tx_pair = std::pair<
+       proof_err_opt*,
+       cbdc::transaction::compact_tx>;
+
+     // Add task to bucket
+     std::unique_lock lk{this->batch_mutex};
+
+     // Check if we need to a new batch
+     // XXX: clean the templates here
+     if (!current_batch) {
+       this->current_batch =
+         std::make_unique<std::vector<err_tx_pair>>(std::vector<err_tx_pair>());
+     }
+
+     proof_err_opt err = std::nullopt;
+     cbdc::transaction::compact_tx ctx(tx);
+     this->current_batch->push_back({&err, ctx});
+
+     if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
+       // TODO: trigger batch clear
+       lk.unlock();
+       this->batch_verify_all();
+     } else {
+       // Since not 
+       this->batch_cv.wait(lk);
+     }
+
+     return err;
+   }
+
+   void controller::batch_verify_all() {
+     // TODO: finish
+     std::lock_guard<std::mutex>(this->batch_mutex);
+
+     auto batch = std::move(this->current_batch);
+
+     if (!batch) {
+       // No batch, do nothing
+       return;
+     }
+     cbdc::transaction::validation::check_batch_proof(*batch);
+
+     // Notify all that their txs have been processed
+     this->batch_cv.notify_all();
+   }
 
     void controller::validate_result_handler(
         validate_result v_res,

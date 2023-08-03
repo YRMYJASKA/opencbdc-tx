@@ -285,9 +285,9 @@ namespace cbdc::transaction::validation {
                      const std::vector<commitment_t>& inps)
         -> std::optional<proof_error> {
         auto* ctx = secp_context.get();
-        static constexpr auto scratch_size = 100UL * 1024UL;
-        secp256k1_scratch_space* scratch
-            = secp256k1_scratch_space_create(ctx, scratch_size);
+        // static constexpr auto scratch_size = 100UL * 1024UL;
+        // secp256k1_scratch_space* scratch
+        //    = secp256k1_scratch_space_create(ctx, scratch_size);
         std::vector<secp256k1_pedersen_commitment> in_comms{};
         for(const auto& comm : inps) {
             auto maybe_aux = deserialize_commitment(ctx, comm);
@@ -308,6 +308,7 @@ namespace cbdc::transaction::validation {
             auto aux = maybe_aux.value();
             out_comms.push_back(aux);
 
+            /* NOTE: removed for batching TODO: remove fully
             // todo: replace lower-bound with 1 instead of 0
             [[maybe_unused]] auto ret
                 = secp256k1_bulletproofs_rangeproof_uncompressed_verify(
@@ -326,6 +327,7 @@ namespace cbdc::transaction::validation {
             if(ret != 1) {
                 return proof_error{proof_error_code::out_of_range};
             }
+            */
         }
 
         if(!check_commitment_sum(in_comms, out_comms, 0)) {
@@ -334,6 +336,42 @@ namespace cbdc::transaction::validation {
 
         return std::nullopt;
     }
+
+  void check_batch_proof(std::vector<std::pair<std::optional<proof_error>*, compact_tx>>& txs) {
+    // XXX TODO: add actual batching. Currently goes over transactions one-by-one.
+    auto ctx = secp_context.get();
+    static constexpr auto scratch_size = 100UL * 1024UL;
+    secp256k1_scratch_space* scratch = secp256k1_scratch_space_create(ctx, scratch_size);
+    for(auto& [res, tx] : txs) {
+      for(const auto& proof : tx.m_outputs) {
+            auto maybe_aux = deserialize_commitment(ctx, proof.m_auxiliary);
+            if(!maybe_aux.has_value()) {
+                *res = proof_error{proof_error_code::invalid_auxiliary};
+            }
+            auto aux = maybe_aux.value();
+
+            // todo: replace lower-bound with 1 instead of 0
+            [[maybe_unused]] auto ret
+                = secp256k1_bulletproofs_rangeproof_uncompressed_verify(
+                    ctx,
+                    scratch,
+                    generators.get(),
+                    secp256k1_generator_h,
+                    proof.m_range.data(),
+                    proof.m_range.size(),
+                    0, // minimum
+                    &aux,
+                    nullptr, // extra commit
+                    0        // extra commit length
+                );
+
+            if(ret != 1) {
+                *res = proof_error{proof_error_code::out_of_range};
+            }
+        }
+    }
+
+  }
 
     auto check_commitment_sum(
         const std::vector<secp256k1_pedersen_commitment>& inputs,

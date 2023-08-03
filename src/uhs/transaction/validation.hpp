@@ -178,6 +178,9 @@ namespace cbdc::transaction::validation {
     auto get_p2pk_witness_commitment(const pubkey_t& payee) -> hash_t;
     auto to_string(const tx_error& err) -> std::string;
 
+    /// \brief Computes batch verification for transactions and reports back results using given optional
+    void check_batch_proof(std::vector<std::pair<std::optional<proof_error>*, compact_tx>>& txs);
+
     /// Validates the sentinel attestations attached to a compact transaction.
     /// \param tx compact transaction to validate.
     /// \param pubkeys set of public keys whose attestations will be accepted.

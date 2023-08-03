@@ -18,11 +18,15 @@
 #include "util/common/hashmap.hpp"
 #include "util/network/connection_manager.hpp"
 
+#include <mutex>
 #include <random>
+#include <optional>
 #include <secp256k1.h>
+#include <condition_variable>
 #include <secp256k1_bulletproofs.h>
 
 namespace cbdc::sentinel_2pc {
+
     /// Manages a sentinel server for the two-phase commit architecture.
     class controller : public cbdc::sentinel::async_interface {
       public:
@@ -88,6 +92,9 @@ namespace cbdc::sentinel_2pc {
         void send_compact_tx(const transaction::compact_tx& ctx,
                              execute_result_callback_type result_callback);
 
+        auto batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error>;
+        void batch_verify_all();
+
         uint32_t m_sentinel_id;
         cbdc::config::options m_opts;
         std::shared_ptr<logging::log> m_logger;
@@ -109,6 +116,15 @@ namespace cbdc::sentinel_2pc {
         std::uniform_int_distribution<size_t> m_dist{};
 
         privkey_t m_privkey{};
+
+        // TODO: add these as configurable variables
+        static const inline size_t VERIFICATION_BATCH_SIZE = 1;
+        static const inline int32_t VERIFICATION_BATCH_REFRESH_MS = 250;
+        using verification_pair = std::pair<std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>;
+        std::unique_ptr<std::vector<verification_pair>> current_batch{};
+        std::condition_variable batch_cv{};
+        std::optional<bool> batch_result = std::nullopt;
+        std::mutex batch_mutex{};
     };
 }
 
