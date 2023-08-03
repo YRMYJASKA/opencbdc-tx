@@ -48,6 +48,7 @@ auto main(int argc, char** argv) -> int {
         return -1;
     }
 
+
     // Wait for CTRL+C etc
     std::signal(SIGINT, [](int /* sig */) {
         running = false;
@@ -60,6 +61,9 @@ auto main(int argc, char** argv) -> int {
             = std::chrono::milliseconds(1000);
         std::this_thread::sleep_for(running_check_delay);
     }
+
+    // Stop verification batching
+    ctl.batch_stop_timing();
 
     logger->info("Shutting down...");
 

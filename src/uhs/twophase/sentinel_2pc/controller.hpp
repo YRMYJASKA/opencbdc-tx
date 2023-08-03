@@ -44,7 +44,7 @@ namespace cbdc::sentinel_2pc {
                    const config::options& opts,
                    std::shared_ptr<logging::log> logger);
 
-        ~controller() override = default;
+        ~controller() override;
 
         /// Initializes the controller. Connects to the shard coordinator
         /// network and launches a server thread for external clients.
@@ -73,6 +73,12 @@ namespace cbdc::sentinel_2pc {
                              validate_result_callback_type result_callback)
             -> bool override;
 
+        /// \brief Trigger the start of a thread that will periodically trigger
+        ///        a batch verification computation.
+        void batch_start_timing();
+
+        /// \brief Stop computing verification batches on this sentinel. 
+        void batch_stop_timing();
       private:
         static void result_handler(std::optional<bool> res,
                                    const execute_result_callback_type& res_cb);
@@ -118,12 +124,13 @@ namespace cbdc::sentinel_2pc {
         privkey_t m_privkey{};
 
         // TODO: add these as configurable variables
-        static const inline size_t VERIFICATION_BATCH_SIZE = 1;
+        static const inline size_t VERIFICATION_BATCH_SIZE = 100;
         static const inline int32_t VERIFICATION_BATCH_REFRESH_MS = 250;
         using verification_pair = std::pair<std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>;
         std::unique_ptr<std::vector<verification_pair>> current_batch{};
         std::condition_variable batch_cv{};
-        std::optional<bool> batch_result = std::nullopt;
+        std::thread batch_timer_thread;
+        std::atomic_bool batch_timing{false};
         std::mutex batch_mutex{};
     };
 }

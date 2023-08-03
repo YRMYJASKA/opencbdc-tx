@@ -25,7 +25,12 @@ namespace cbdc::sentinel_2pc {
               opts.m_coordinator_endpoints[sentinel_id
                                            % static_cast<uint32_t>(
                                                opts.m_coordinator_endpoints
-                                                   .size())]) {}
+                                                   .size())]) {
+      
+    }
+    controller::~controller() {
+      this->batch_stop_timing();
+    }
 
     auto controller::init() -> bool {
         if(m_opts.m_sentinel_endpoints.empty()) {
@@ -94,6 +99,9 @@ namespace cbdc::sentinel_2pc {
         m_rpc_server = std::make_unique<decltype(m_rpc_server)::element_type>(
             this,
             std::move(rpc_server));
+
+        // Start batching together verifications
+        this->batch_start_timing();
 
         return true;
     }
@@ -188,7 +196,6 @@ namespace cbdc::sentinel_2pc {
 
   auto controller::batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error> {
      // TODO: finish
-
      // TODO clean template stuff
      using proof_err_opt = std::optional<cbdc::transaction::validation::proof_error>;
      using err_tx_pair = std::pair<
@@ -208,7 +215,7 @@ namespace cbdc::sentinel_2pc {
      proof_err_opt err = std::nullopt;
      cbdc::transaction::compact_tx ctx(tx);
      this->current_batch->push_back({&err, ctx});
-
+     
      if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
        // TODO: trigger batch clear
        lk.unlock();
@@ -224,6 +231,7 @@ namespace cbdc::sentinel_2pc {
    void controller::batch_verify_all() {
      // TODO: finish
      std::lock_guard<std::mutex>(this->batch_mutex);
+     m_logger->debug("batch_verify_all called.");
 
      auto batch = std::move(this->current_batch);
 
@@ -235,6 +243,27 @@ namespace cbdc::sentinel_2pc {
 
      // Notify all that their txs have been processed
      this->batch_cv.notify_all();
+   }
+
+   void controller::batch_start_timing() {
+     this->batch_timing = true;
+     // launch thread
+     this->batch_timer_thread = std::thread([this](){
+       auto const time_interval
+         = std::chrono::milliseconds(this->VERIFICATION_BATCH_REFRESH_MS);
+       while (this->batch_timing) {
+         std::this_thread::sleep_for(time_interval);
+         this->batch_verify_all();
+       }
+     });
+   }
+
+   void controller::batch_stop_timing() {
+     bool was_running = this->batch_timing;
+     this->batch_timing = false;
+     if (was_running) {
+       this->batch_timer_thread.join();
+     }
    }
 
     void controller::validate_result_handler(
