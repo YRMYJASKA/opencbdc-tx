@@ -110,9 +110,10 @@ namespace cbdc::sentinel_2pc {
     auto controller::execute_transaction(
         transaction::full_tx tx,
         execute_result_callback_type result_callback) -> bool {
-        const auto validation_err = transaction::validation::check_tx(tx);
 
-        
+        m_logger->debug("Called exec transaction (1)");
+
+        const auto validation_err = transaction::validation::check_tx(tx);
 
         if(validation_err.has_value()) {
             auto tx_id = transaction::tx_id(tx);
@@ -127,6 +128,7 @@ namespace cbdc::sentinel_2pc {
             return true;
         }
 
+        m_logger->debug("Started  batch verification (1)");
         // Add task for batching
         auto batch_verification_err = batch_add_verification(tx);
         if (batch_verification_err.has_value()) {
@@ -142,6 +144,7 @@ namespace cbdc::sentinel_2pc {
               validation_err});
           return true;
         }
+        m_logger->debug("Got done with verification (1)");
 
         auto compact_tx = cbdc::transaction::compact_tx(tx);
 
@@ -152,6 +155,7 @@ namespace cbdc::sentinel_2pc {
 
         gather_attestations(tx, std::move(result_callback), compact_tx, {});
 
+        m_logger->debug("Gathered attestations  (1)");
         return true;
     }
 
@@ -174,6 +178,7 @@ namespace cbdc::sentinel_2pc {
     auto controller::validate_transaction(
         transaction::full_tx tx,
         validate_result_callback_type result_callback) -> bool {
+        m_logger->debug("Called validate transaction (2)");
         const auto validation_err = transaction::validation::check_tx(tx);
 
         if(validation_err.has_value()) {
@@ -182,11 +187,13 @@ namespace cbdc::sentinel_2pc {
         }
 
         // Add task for ratching
+        m_logger->debug("Started  with verification (2)");
         auto batch_verification_err = batch_add_verification(tx);
         if(batch_verification_err.has_value()) {
             result_callback(std::nullopt);
             return true;
         }
+        m_logger->debug("Got done with verification (2)");
 
         auto compact_tx = cbdc::transaction::compact_tx(tx);
         auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
@@ -197,52 +204,50 @@ namespace cbdc::sentinel_2pc {
   auto controller::batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error> {
      // TODO: finish
      // TODO clean template stuff
-     using proof_err_opt = std::optional<cbdc::transaction::validation::proof_error>;
-     using err_tx_pair = std::pair<
-       proof_err_opt*,
-       cbdc::transaction::compact_tx>;
 
-     // Add task to bucket
+     // Sync up access to the batch
      std::unique_lock lk{this->batch_mutex};
 
      // Check if we need to a new batch
      // XXX: clean the templates here
      if (!current_batch) {
        this->current_batch =
-         std::make_unique<std::vector<err_tx_pair>>(std::vector<err_tx_pair>());
+         std::make_unique<std::vector<verification_tuple>>();
      }
 
-     proof_err_opt err = std::nullopt;
+     std::optional<cbdc::transaction::validation::proof_error> err = std::nullopt;
      cbdc::transaction::compact_tx ctx(tx);
-     this->current_batch->push_back({&err, ctx});
+     sem_t* sema = (sem_t*) malloc(sizeof(sem_t));
+     sem_init(sema, 0, 0);
+     this->current_batch->push_back({sema, &err, ctx});
+     lk.unlock();
      
      if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
        // TODO: trigger batch clear
-       lk.unlock();
        this->batch_verify_all();
-     } else {
-       // Since not 
-       this->batch_cv.wait(lk);
      }
+
+     sem_wait(sema);
+     sem_destroy(sema);
 
      return err;
    }
 
    void controller::batch_verify_all() {
      // TODO: finish
-     std::lock_guard<std::mutex>(this->batch_mutex);
      m_logger->debug("batch_verify_all called.");
 
-     auto batch = std::move(this->current_batch);
+     std::unique_lock lk{this->batch_mutex};
+     auto batch = move(this->current_batch);
+     lk.unlock();
 
      if (!batch) {
        // No batch, do nothing
        return;
      }
+
      cbdc::transaction::validation::check_batch_proof(*batch);
 
-     // Notify all that their txs have been processed
-     this->batch_cv.notify_all();
    }
 
    void controller::batch_start_timing() {
@@ -259,6 +264,7 @@ namespace cbdc::sentinel_2pc {
    }
 
    void controller::batch_stop_timing() {
+     m_logger->debug("Stopping batching...");
      bool was_running = this->batch_timing;
      this->batch_timing = false;
      if (was_running) {
@@ -336,5 +342,7 @@ namespace cbdc::sentinel_2pc {
             static constexpr auto retry_delay = std::chrono::milliseconds(100);
             std::this_thread::sleep_for(retry_delay);
         };
+
+        m_logger->debug("send_compact_tx DONE!");
     }
 }

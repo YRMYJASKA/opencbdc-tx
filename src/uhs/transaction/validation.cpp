@@ -337,12 +337,15 @@ namespace cbdc::transaction::validation {
         return std::nullopt;
     }
 
-  void check_batch_proof(std::vector<std::pair<std::optional<proof_error>*, compact_tx>>& txs) {
+  void check_batch_proof(std::vector<std::tuple<sem_t*, std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>>& txs) {
     // XXX TODO: add actual batching. Currently goes over transactions one-by-one.
     auto ctx = secp_context.get();
     static constexpr auto scratch_size = 100UL * 1024UL;
     secp256k1_scratch_space* scratch = secp256k1_scratch_space_create(ctx, scratch_size);
-    for(auto& [res, tx] : txs) {
+    for(auto t : txs) {
+      auto sema = std::get<0>(t);
+      auto res = std::get<1>(t);
+      auto tx = std::get<2>(t);
       for(const auto& proof : tx.m_outputs) {
             auto maybe_aux = deserialize_commitment(ctx, proof.m_auxiliary);
             if(!maybe_aux.has_value()) {
@@ -368,6 +371,7 @@ namespace cbdc::transaction::validation {
             if(ret != 1) {
                 *res = proof_error{proof_error_code::out_of_range};
             }
+            sem_post(sema);
         }
     }
 

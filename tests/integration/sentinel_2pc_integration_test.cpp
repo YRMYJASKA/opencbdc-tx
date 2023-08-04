@@ -33,6 +33,10 @@ class sentinel_2pc_integration_test : public ::testing::Test {
         ASSERT_TRUE(m_client->init());
     }
 
+    void TearDown() override {
+        m_ctl->batch_stop_timing();
+    }
+
     static constexpr auto m_sentinel_cfg_path = "integration_tests_2pc.cfg";
 
     cbdc::config::options m_opts{};
@@ -66,10 +70,15 @@ TEST_F(sentinel_2pc_integration_test, valid_signed_tx) {
                                           std::nullopt};
 
     std::thread client_thread([&]() {
+        m_logger->debug("A");
         auto got = m_client->execute_transaction(tx.value());
+        m_logger->debug("B");
         ASSERT_TRUE(got.has_value());
+        m_logger->debug("C");
         cbdc::test::print_sentinel_error(got->m_tx_error);
+        m_logger->debug("D");
         ASSERT_EQ(got.value(), want);
+        m_logger->debug("E");
     });
 
     // Wait for the sentinel client message to send.

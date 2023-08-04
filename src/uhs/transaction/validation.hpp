@@ -14,6 +14,8 @@
 #include <secp256k1.h>
 #include <secp256k1_schnorrsig.h>
 #include <set>
+#include <tuple>
+#include <semaphore.h>
 #include <variant>
 
 namespace cbdc::transaction::validation {
@@ -179,7 +181,7 @@ namespace cbdc::transaction::validation {
     auto to_string(const tx_error& err) -> std::string;
 
     /// \brief Computes batch verification for transactions and reports back results using given optional
-    void check_batch_proof(std::vector<std::pair<std::optional<proof_error>*, compact_tx>>& txs);
+  void check_batch_proof(std::vector<std::tuple<sem_t*, std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>>& txs);
 
     /// Validates the sentinel attestations attached to a compact transaction.
     /// \param tx compact transaction to validate.

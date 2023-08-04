@@ -20,6 +20,7 @@
 
 #include <mutex>
 #include <random>
+#include <semaphore.h>
 #include <optional>
 #include <secp256k1.h>
 #include <condition_variable>
@@ -126,9 +127,8 @@ namespace cbdc::sentinel_2pc {
         // TODO: add these as configurable variables
         static const inline size_t VERIFICATION_BATCH_SIZE = 100;
         static const inline int32_t VERIFICATION_BATCH_REFRESH_MS = 250;
-        using verification_pair = std::pair<std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>;
-        std::unique_ptr<std::vector<verification_pair>> current_batch{};
-        std::condition_variable batch_cv{};
+        using verification_tuple = std::tuple<sem_t*, std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>;
+        std::unique_ptr<std::vector<verification_tuple>> current_batch{};
         std::thread batch_timer_thread;
         std::atomic_bool batch_timing{false};
         std::mutex batch_mutex{};
