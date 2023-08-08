@@ -9,10 +9,12 @@
 
 #include <cassert>
 #include <memory>
+#include <future>
 #include <secp256k1.h>
 #include <secp256k1_generator.h>
 #include <secp256k1_schnorrsig.h>
 #include <set>
+#include <iostream>
 
 namespace cbdc::transaction::validation {
     static const auto secp_context
@@ -337,19 +339,21 @@ namespace cbdc::transaction::validation {
         return std::nullopt;
     }
 
-  void check_batch_proof(std::vector<std::tuple<sem_t*, std::optional<cbdc::transaction::validation::proof_error>*, cbdc::transaction::compact_tx>>& txs) {
+  void check_batch_proof(std::vector<std::pair<std::promise<std::optional<cbdc::transaction::validation::proof_error>>, cbdc::transaction::compact_tx>>& txs) {
     // XXX TODO: add actual batching. Currently goes over transactions one-by-one.
     auto ctx = secp_context.get();
     static constexpr auto scratch_size = 100UL * 1024UL;
     secp256k1_scratch_space* scratch = secp256k1_scratch_space_create(ctx, scratch_size);
-    for(auto t : txs) {
-      auto sema = std::get<0>(t);
-      auto res = std::get<1>(t);
-      auto tx = std::get<2>(t);
-      for(const auto& proof : tx.m_outputs) {
+    while (!txs.empty()) {
+        auto [err_p, tx] = std::move(txs.back());
+        txs.pop_back();
+        bool success = true;
+        for(const auto& proof : tx.m_outputs) {
             auto maybe_aux = deserialize_commitment(ctx, proof.m_auxiliary);
             if(!maybe_aux.has_value()) {
-                *res = proof_error{proof_error_code::invalid_auxiliary};
+                err_p.set_value(proof_error{proof_error_code::invalid_auxiliary});
+                success = false;
+                break;
             }
             auto aux = maybe_aux.value();
 
@@ -369,10 +373,12 @@ namespace cbdc::transaction::validation {
                 );
 
             if(ret != 1) {
-                *res = proof_error{proof_error_code::out_of_range};
+                err_p.set_value(proof_error{proof_error_code::out_of_range});
+                success = false;
+                break;
             }
-            sem_post(sema);
         }
+        if (success) err_p.set_value(std::nullopt);
     }
 
   }

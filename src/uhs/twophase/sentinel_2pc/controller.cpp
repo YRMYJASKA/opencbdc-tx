@@ -111,8 +111,6 @@ namespace cbdc::sentinel_2pc {
         transaction::full_tx tx,
         execute_result_callback_type result_callback) -> bool {
 
-        m_logger->debug("Called exec transaction (1)");
-
         const auto validation_err = transaction::validation::check_tx(tx);
 
         if(validation_err.has_value()) {
@@ -128,7 +126,6 @@ namespace cbdc::sentinel_2pc {
             return true;
         }
 
-        m_logger->debug("Started  batch verification (1)");
         // Add task for batching
         auto batch_verification_err = batch_add_verification(tx);
         if (batch_verification_err.has_value()) {
@@ -144,7 +141,6 @@ namespace cbdc::sentinel_2pc {
               validation_err});
           return true;
         }
-        m_logger->debug("Got done with verification (1)");
 
         auto compact_tx = cbdc::transaction::compact_tx(tx);
 
@@ -155,7 +151,6 @@ namespace cbdc::sentinel_2pc {
 
         gather_attestations(tx, std::move(result_callback), compact_tx, {});
 
-        m_logger->debug("Gathered attestations  (1)");
         return true;
     }
 
@@ -178,7 +173,6 @@ namespace cbdc::sentinel_2pc {
     auto controller::validate_transaction(
         transaction::full_tx tx,
         validate_result_callback_type result_callback) -> bool {
-        m_logger->debug("Called validate transaction (2)");
         const auto validation_err = transaction::validation::check_tx(tx);
 
         if(validation_err.has_value()) {
@@ -187,13 +181,11 @@ namespace cbdc::sentinel_2pc {
         }
 
         // Add task for ratching
-        m_logger->debug("Started  with verification (2)");
         auto batch_verification_err = batch_add_verification(tx);
         if(batch_verification_err.has_value()) {
             result_callback(std::nullopt);
             return true;
         }
-        m_logger->debug("Got done with verification (2)");
 
         auto compact_tx = cbdc::transaction::compact_tx(tx);
         auto attestation = compact_tx.sign(m_secp.get(), m_privkey);
@@ -201,76 +193,70 @@ namespace cbdc::sentinel_2pc {
         return true;
     }
 
-  auto controller::batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error> {
-     // TODO: finish
-     // TODO clean template stuff
+    auto controller::batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error> {
+      // TODO: finish
+      // TODO clean template stuff
 
-     // Sync up access to the batch
-     std::unique_lock lk{this->batch_mutex};
+      // Sync up access to the batch
+      std::unique_lock lk{this->batch_mutex};
 
-     // Check if we need to a new batch
-     // XXX: clean the templates here
-     if (!current_batch) {
-       this->current_batch =
-         std::make_unique<std::vector<verification_tuple>>();
-     }
+      // Check if we need to a new batch
+      // XXX: clean the templates here
+      if (!current_batch) {
+        this->current_batch =
+          std::make_unique<std::vector<verification_pair>>();
+      }
 
-     std::optional<cbdc::transaction::validation::proof_error> err = std::nullopt;
-     cbdc::transaction::compact_tx ctx(tx);
-     sem_t* sema = (sem_t*) malloc(sizeof(sem_t));
-     sem_init(sema, 0, 0);
-     this->current_batch->push_back({sema, &err, ctx});
-     lk.unlock();
-     
-     if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
-       // TODO: trigger batch clear
-       this->batch_verify_all();
-     }
+      cbdc::transaction::compact_tx ctx(tx);
+      std::promise<std::optional<cbdc::transaction::validation::proof_error>> err_promise;
+      auto err = err_promise.get_future();
+      this->current_batch->push_back({std::move(err_promise), ctx});
+      lk.unlock();
+      
+      if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
+        // TODO: trigger batch clear
+        this->batch_verify_all();
+      }
+      return err.get();
+    }
 
-     sem_wait(sema);
-     sem_destroy(sema);
+    void controller::batch_verify_all() {
+      // TODO: finish
+      m_logger->debug("batch_verify_all called.");
 
-     return err;
-   }
+      std::unique_lock lk{this->batch_mutex};
+      auto batch = std::move(this->current_batch);
+      lk.unlock();
 
-   void controller::batch_verify_all() {
-     // TODO: finish
-     m_logger->debug("batch_verify_all called.");
-
-     std::unique_lock lk{this->batch_mutex};
-     auto batch = move(this->current_batch);
-     lk.unlock();
-
-     if (!batch) {
+      if (!batch) {
        // No batch, do nothing
-       return;
-     }
+        return;
+      }
 
-     cbdc::transaction::validation::check_batch_proof(*batch);
+      cbdc::transaction::validation::check_batch_proof(*batch);
+    }
 
-   }
+    void controller::batch_start_timing() {
+      this->batch_timing = true;
+      // launch thread
+      this->batch_timer_thread = std::thread([this](){
+        auto const time_interval
+          = std::chrono::milliseconds(this->VERIFICATION_BATCH_REFRESH_MS);
+        while (this->batch_timing) {
+          std::this_thread::sleep_for(time_interval);
+          this->batch_verify_all();
+        }
+      });
+    }
 
-   void controller::batch_start_timing() {
-     this->batch_timing = true;
-     // launch thread
-     this->batch_timer_thread = std::thread([this](){
-       auto const time_interval
-         = std::chrono::milliseconds(this->VERIFICATION_BATCH_REFRESH_MS);
-       while (this->batch_timing) {
-         std::this_thread::sleep_for(time_interval);
-         this->batch_verify_all();
-       }
-     });
-   }
-
-   void controller::batch_stop_timing() {
-     m_logger->debug("Stopping batching...");
-     bool was_running = this->batch_timing;
-     this->batch_timing = false;
-     if (was_running) {
-       this->batch_timer_thread.join();
-     }
-   }
+    void controller::batch_stop_timing() {
+      m_logger->debug("Stopping batching...");
+      bool was_running = this->batch_timing;
+      this->batch_timing = false;
+      if (was_running) {
+        this->batch_timer_thread.join();
+      }
+    }
 
     void controller::validate_result_handler(
         validate_result v_res,
