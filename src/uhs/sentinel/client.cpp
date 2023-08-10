@@ -25,13 +25,10 @@ namespace cbdc::sentinel::rpc {
 
     auto client::execute_transaction(cbdc::transaction::full_tx tx)
         -> std::optional<execute_response> {
-        m_logger->debug("Execute transaction (A)");
         auto res = m_client.call(execute_request{std::move(tx)});
-        m_logger->debug("Execute transaction (B)");
         if(!res.has_value()) {
             return std::nullopt;
         }
-        m_logger->debug("Execute transaction (C)");
         return std::get<execute_response>(res.value());
     }
 

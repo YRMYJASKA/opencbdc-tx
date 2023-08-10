@@ -194,68 +194,64 @@ namespace cbdc::sentinel_2pc {
     }
 
     auto controller::batch_add_verification(transaction::full_tx& tx) -> std::optional<cbdc::transaction::validation::proof_error> {
-      // TODO: finish
-      // TODO clean template stuff
+        // TODO: finish
 
-      // Sync up access to the batch
-      std::unique_lock lk{this->batch_mutex};
+        // Sync up access to the batch
+        std::unique_lock lk{this->batch_mutex};
 
-      // Check if we need to a new batch
-      // XXX: clean the templates here
-      if (!current_batch) {
-        this->current_batch =
-          std::make_unique<std::vector<verification_pair>>();
-      }
+        // Check if we need to a new batch
+        if (!current_batch) {
+            this->current_batch =
+            std::make_unique<std::vector<verification_pair>>();
+        }
 
-      cbdc::transaction::compact_tx ctx(tx);
-      std::promise<std::optional<cbdc::transaction::validation::proof_error>> err_promise;
-      auto err = err_promise.get_future();
-      this->current_batch->push_back({std::move(err_promise), ctx});
-      lk.unlock();
-      
-      if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
-        // TODO: trigger batch clear
-        this->batch_verify_all();
-      }
-      return err.get();
+        cbdc::transaction::compact_tx ctx(tx);
+        std::promise<std::optional<cbdc::transaction::validation::proof_error>> err_promise;
+        auto err = err_promise.get_future();
+        this->current_batch->push_back({std::move(err_promise), ctx});
+        lk.unlock();
+
+        if (this->current_batch->size() >= this->VERIFICATION_BATCH_SIZE) {
+            this->batch_verify_all();
+        }
+        return err.get();
     }
 
     void controller::batch_verify_all() {
-      // TODO: finish
-      m_logger->debug("batch_verify_all called.");
+        // TODO: finish actual batching
 
-      std::unique_lock lk{this->batch_mutex};
-      auto batch = std::move(this->current_batch);
-      lk.unlock();
+        std::unique_lock lk{this->batch_mutex};
+        auto batch = std::move(this->current_batch);
+        lk.unlock();
 
-      if (!batch) {
-       // No batch, do nothing
-        return;
-      }
+        if (!batch) {
+            // No batch, do nothing
+            return;
+        }
 
-      cbdc::transaction::validation::check_batch_proof(*batch);
+        cbdc::transaction::validation::check_batch_proof(*batch);
     }
 
     void controller::batch_start_timing() {
-      this->batch_timing = true;
-      // launch thread
-      this->batch_timer_thread = std::thread([this](){
+        this->batch_timing = true;
+        // launch thread
+        this->batch_timer_thread = std::thread([this](){
         auto const time_interval
           = std::chrono::milliseconds(this->VERIFICATION_BATCH_REFRESH_MS);
         while (this->batch_timing) {
-          std::this_thread::sleep_for(time_interval);
-          this->batch_verify_all();
+            std::this_thread::sleep_for(time_interval);
+            this->batch_verify_all();
         }
       });
     }
 
     void controller::batch_stop_timing() {
-      m_logger->debug("Stopping batching...");
-      bool was_running = this->batch_timing;
-      this->batch_timing = false;
-      if (was_running) {
-        this->batch_timer_thread.join();
-      }
+        m_logger->debug("Stopping batching...");
+        bool was_running = this->batch_timing;
+        this->batch_timing = false;
+        if (was_running) {
+            this->batch_timer_thread.join();
+        }
     }
 
     void controller::validate_result_handler(
@@ -328,7 +324,5 @@ namespace cbdc::sentinel_2pc {
             static constexpr auto retry_delay = std::chrono::milliseconds(100);
             std::this_thread::sleep_for(retry_delay);
         };
-
-        m_logger->debug("send_compact_tx DONE!");
     }
 }

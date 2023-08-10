@@ -125,7 +125,7 @@ namespace cbdc::sentinel_2pc {
         privkey_t m_privkey{};
 
         // TODO: add these as configurable variables
-        static const inline size_t VERIFICATION_BATCH_SIZE = 100;
+        static const inline size_t VERIFICATION_BATCH_SIZE = 10;
         static const inline int32_t VERIFICATION_BATCH_REFRESH_MS = 250;
         using verification_pair = std::pair<std::promise<std::optional<cbdc::transaction::validation::proof_error>>, cbdc::transaction::compact_tx>;
         std::unique_ptr<std::vector<verification_pair>> current_batch{};
